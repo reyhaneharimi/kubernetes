@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+  namespace: default
+
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    command:
+      - sleep
+      - "1800"
+    imagePullPolicy: IfNotPresent
+
+    volumeMounts:
+    - mountPath: /etc/kubernetes
+      name: k8setcdcert
+
+  hostNetwork: true
+    #nodeName: kind-control-plane
+
+  volumes:
+  - name: k8setcdcert
+    hostPath:
+      path: /etc/kubernetes
+      type: ""
+
+  restartPolicy: Always

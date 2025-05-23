@@ -1,0 +1,64 @@
+nameOverride: argocd
+namespaceOverride: "argocd"
+
+crds:
+  install: true
+  keep: true
+
+global:
+  domain: argocd.st29.lab.mecan.ir
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: ""
+    imagePullPolicy: IfNotPresent
+
+configs:
+  secret:
+    ## htpasswd -nbBC 10 admin argoadminpass | cut -d ":" -f 2
+    argocdServerAdminPassword: "$2y$10$cAP0dtKi//KbAFTkENRnTu7o8GxGLsJsMohV9vA59N/UFeOs1kQSK"
+  params:
+    server.insecure: true
+
+controller:
+  name: application-controller
+  replicas: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  metrics:
+    enabled: true
+    service:
+      type: ClusterIP
+      servicePort: 8082
+      portName: http-metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      namespace: monitoring
+
+server:
+  name: server
+  replicas: 1
+
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      certmanager.k8s.io/acme-http01-edit-in-place: "false"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+      kubernetes.io/tls-acme: "true"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    ingressClassName: "nginx"
+    hostname: "argocd.st29.lab.mecan.ir"
+    path: /
+    pathType: Prefix
+    tls:
+      - secretName: argocd-server-tls
+        hosts:
+          - argocd.st29.lab.mecan.ir
+
+

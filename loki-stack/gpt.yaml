@@ -1,0 +1,94 @@
+loki:
+  enabled: true
+  auth_enabled: false
+
+  image:
+    repository: grafana/loki
+    tag: 2.9.3
+    pullPolicy: IfNotPresent
+
+  commonConfig:
+    path_prefix: /var/loki
+    replication_factor: 1
+
+  storage:
+    type: filesystem
+
+  schemaConfig:
+    configs:
+      - from: 2020-10-24
+        store: boltdb-shipper
+        object_store: filesystem
+        schema: v11
+        index:
+          prefix: index_
+          period: 24h
+
+  compactor:
+    working_directory: /var/loki/compactor
+    shared_store: filesystem
+
+  rulerConfig:
+    storage:
+      type: local
+      local:
+        directory: /var/loki/rules
+    rule_path: /var/loki/rules-temp
+    alertmanager_url: http://localhost:9093
+
+  limits_config:
+    enforce_metric_name: false
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1500m
+      memory: 4096Mi
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    type: pvc
+    storageClass: local-path
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+
+  extraVolumes:
+    - name: rules
+      emptyDir: {}
+
+  extraVolumeMounts:
+    - name: rules
+      mountPath: /var/loki/rules
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http-metrics
+
+write:
+  replicas: 0
+
+read:
+  replicas: 0
+
+backend:
+  replicas: 0
+
+gateway:
+  enabled: false
+
+promtail:
+  enabled: true
+  resources:
+    requests:
+      cpu: 200m
+      memory: 248Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
